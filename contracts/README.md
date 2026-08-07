@@ -22,7 +22,7 @@ Testnet-first; mainnet deployment planned for Level 6.
 ## Build & test
 
 ```bash
-cd energyfi-network/contracts
+cd contracts
 cargo test --release                 # run all unit tests
 cargo build --release --target wasm32v1-none   # produce .wasm artifacts
 ```

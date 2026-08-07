@@ -5,8 +5,8 @@ Stellar. Each level lists the official requirements, current status, and concret
 tasks with owners/evidence.
 
 - Repo: `https://github.com/<org>/EnergyFi-Network` (public)
-- App: `energyfi-network/dev-server/` (TanStack Start + React + Tailwind, Stellar SDK)
-- Contracts: `energyfi-network/contracts/` (Soroban, Rust) — 4 contracts live on testnet
+- App: `dev-server/` (TanStack Start + React + Tailwind, Stellar SDK)
+- Contracts: `contracts/` (Soroban, Rust) — 4 contracts live on testnet
 - Status legend: ✅ done · 🔧 in progress · ⬜ todo · 🎯 next milestone
 
 **Current direction (fintech conversion, 2026-08-06):** EnergyFi is a fintech app on

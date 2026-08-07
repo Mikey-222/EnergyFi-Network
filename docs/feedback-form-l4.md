@@ -1,7 +1,7 @@
 # L4.3 Feedback Form (draft)
 
 Create a Google Form with these questions, then paste the shareable link into
-`energyfi-network/dev-server/src/lib/energyfi/config.ts` (`FEEDBACK_FORM_URL`)
+`dev-server/src/lib/energyfi/config.ts` (`FEEDBACK_FORM_URL`)
 and add a "Feedback" link in the app (profile screen). Responses get summarized
 in `docs/feedback-l4.md`.
 

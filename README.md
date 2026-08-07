@@ -25,13 +25,12 @@ testnet.
   energy settlements.
 
 A full security model (auth, pledge integrity, routing solvency, rounding, events,
-limitations) is documented in [`energyfi-network/contracts/README.md`](energyfi-network/contracts/README.md),
-and the underwriting economics in [`energyfi-network/docs/UNDERWRITING.md`](energyfi-network/docs/UNDERWRITING.md).
+limitations) is documented in [`contracts/README.md`](contracts/README.md),
+and the underwriting economics in [`docs/UNDERWRITING.md`](docs/UNDERWRITING.md).
 
 ## Layout
 
 ```
-energyfi-network/
 ├── contracts/            # Soroban contracts (project, installments, referral, energy-credit)
 │   └── README.md         # contract docs + exhaustive security model + deploy addresses
 ├── dev-server/           # web frontend + dev tooling
@@ -102,11 +101,11 @@ balances **0.0000**, pool USDC **14.8357**.
 
 ```bash
 # contracts
-cd energyfi-network/contracts
+cd contracts
 cargo test --workspace            # 39/39 tests across the four contracts
 
 # frontend
-cd energyfi-network/dev-server
+cd dev-server
 npm install
 npm run dev
 ```

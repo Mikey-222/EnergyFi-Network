@@ -42,7 +42,7 @@ EnergyFi connects three sides on one Stellar-based platform:
 
 ## Current status
 
-- Levels 1–3 built the app shell: onboarding/KYC, marketplace (shop + invest), bill payments, provider portal, and a wallet with real Stellar integration (wallet connect via stellar-wallets-kit, Horizon balances, XLM payments) — in `energyfi-network/dev-server/`.
+- Levels 1–3 built the app shell: onboarding/KYC, marketplace (shop + invest), bill payments, provider portal, and a wallet with real Stellar integration (wallet connect via stellar-wallets-kit, Horizon balances, XLM payments) — in `dev-server/`.
 - Balances/products/investments are still mock; everything is XLM-only today.
 
 ## Build plan for Levels 5–7
