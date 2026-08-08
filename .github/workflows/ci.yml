@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install -g npm@10.9.4
-          npm ci
+          npm install
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Production build
