@@ -155,6 +155,10 @@ The app connects through Stellar Wallet Kit, so any Stellar wallet can be used:
 
 ![Balance displayed](docs/screenshots/balance.png)
 
+### CI/CD pipeline running
+
+![CI/CD](docs/screenshots/pipeline.png)
+
 ### Successful testnet transaction
 
 ![Successful testnet transaction](docs/screenshots/tx-success.png)
