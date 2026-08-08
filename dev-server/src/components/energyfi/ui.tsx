@@ -4,28 +4,13 @@ import type { LinkProps } from "@tanstack/react-router";
 import { ChevronLeft, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/* Phone frame that wraps every mobile screen so the web preview feels handheld. */
+/* Full-viewport desktop frame that wraps every screen. */
 export function PhoneFrame({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen night-bg grid-lines">
-      <div className="mx-auto flex min-h-screen max-w-[680px] flex-col bg-background sm:my-6 sm:min-h-[900px] sm:rounded-[2.75rem] sm:border sm:border-white/10 sm:shadow-[0_40px_120px_-30px_rgba(0,0,0,0.7)] sm:overflow-hidden relative">
-        <StatusBar />
+      <div className="flex min-h-screen w-full flex-col bg-background relative">
         <div className="flex-1 flex flex-col">{children}</div>
       </div>
-    </div>
-  );
-}
-
-function StatusBar() {
-  return (
-    <div className="flex h-8 items-center justify-between px-6 pt-2 text-[11px] font-medium text-foreground/80 tabular">
-      <span>9:41</span>
-      <span className="h-1.5 w-16 rounded-full bg-foreground/20" />
-      <span className="flex gap-1">
-        <span>●●●●</span>
-        <span>5G</span>
-        <span>100%</span>
-      </span>
     </div>
   );
 }
