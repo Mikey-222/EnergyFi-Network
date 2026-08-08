@@ -118,7 +118,10 @@ function Review() {
               <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking your pledge…
               </div>
-            ) : eligibility && !pledgeMet ? (
+            ) : eligibility &&
+              !eligibility.defaulted &&
+              !eligibility.already_started &&
+              eligibility.savings < eligibility.required_pledge ? (
               <Card className="border-warning/25">
                 <div className="flex items-start gap-2.5">
                   <ShieldAlert className="h-4 w-4 text-warning shrink-0 mt-0.5" />
