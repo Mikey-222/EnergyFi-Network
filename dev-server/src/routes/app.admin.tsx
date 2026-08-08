@@ -565,25 +565,28 @@ function Admin() {
                   {loans.map((row) => {
                     const meta = PRODUCT_CATALOG[row.productId];
                     const key = `loan-${row.buyer}-${row.productId}`;
+                    const settled = row.financing ? row.financing.installments_paid >= 12n : false;
                     const status = row.defaulted
                       ? { label: "Defaulted", cls: "text-red-400" }
                       : !row.financing
                         ? { label: "Not started", cls: "text-muted-foreground" }
-                        : !row.financing.disbursed
-                          ? { label: "Started · pending disburse", cls: "text-warning" }
-                          : row.financing.late > 0
-                            ? {
-                                label: `Late · ${row.financing.late} installment${
-                                  row.financing.late > 1 ? "s" : ""
-                                }`,
-                                cls: "text-warning",
-                              }
-                            : row.financing.installments_paid > 0
+                        : settled
+                          ? { label: "Settled · all 12/12 paid", cls: "text-success" }
+                          : !row.financing.disbursed
+                            ? { label: "Started · pending disburse", cls: "text-warning" }
+                            : row.financing.late > 0
                               ? {
-                                  label: `Active · ${row.financing.installments_paid}/12 paid`,
-                                  cls: "text-success",
+                                  label: `Late · ${row.financing.late} installment${
+                                    row.financing.late > 1 ? "s" : ""
+                                  }`,
+                                  cls: "text-warning",
                                 }
-                              : { label: "Disbursed", cls: "text-primary" };
+                              : row.financing.installments_paid > 0
+                                ? {
+                                    label: `Active · ${row.financing.installments_paid}/12 paid`,
+                                    cls: "text-success",
+                                  }
+                                : { label: "Disbursed", cls: "text-primary" };
                     return (
                       <div key={key} className="p-3 space-y-2">
                         <div className="flex items-center justify-between gap-2">
@@ -633,7 +636,7 @@ function Admin() {
                                 );
                               })()}
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {!row.defaulted && !row.financing.disbursed && (
+                              {!row.defaulted && !settled && !row.financing.disbursed && (
                                 <button
                                   disabled={busy !== null}
                                   onClick={() => runLoanAction(key, "disburse", row)}
@@ -643,7 +646,7 @@ function Admin() {
                                   {busy === key ? "…" : "Disburse"}
                                 </button>
                               )}
-                              {!row.defaulted && row.financing.disbursed && (
+                              {!row.defaulted && !settled && row.financing.disbursed && (
                                 <>
                                   <button
                                     disabled={busy !== null}

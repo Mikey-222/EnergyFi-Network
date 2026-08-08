@@ -253,12 +253,17 @@ impl Installments {
         if !product.active {
             panic!("product not active");
         }
-        if env
+        // A financing may only be started when no *active* one exists — a
+        // fully repaid financing (installments_paid >= months) does not block
+        // starting a new one.
+        if let Some(f) = env
             .storage()
             .persistent()
-            .has(&DataKey::Financing(buyer.clone(), product_id.clone()))
+            .get::<_, Financing>(&DataKey::Financing(buyer.clone(), product_id.clone()))
         {
-            panic!("financing already exists");
+            if f.installments_paid < product.months {
+                panic!("financing already exists");
+            }
         }
 
         // Secured (loan) products: the borrower must already hold the 25%
@@ -694,15 +699,22 @@ impl Installments {
     /// covering at least 25% of the principal.
     pub fn check_eligibility(env: Env, borrower: Address, product_id: Symbol) -> EligibilityResult {
         let defaulted = Self::is_defaulted(env.clone(), borrower.clone());
-        let already_started = env
-            .storage()
-            .persistent()
-            .has(&DataKey::Financing(borrower.clone(), product_id.clone()));
-
         let product_opt: Option<Product> = env
             .storage()
             .persistent()
             .get(&DataKey::Product(product_id.clone()));
+        // A financing only blocks re-eligibility while it is still active
+        // (installments outstanding). Fully repaid financings leave the
+        // borrower free to start another one.
+        let already_started = env
+            .storage()
+            .persistent()
+            .get::<_, Financing>(&DataKey::Financing(borrower.clone(), product_id.clone()))
+            .map_or(false, |f| {
+                product_opt
+                    .as_ref()
+                    .map_or(true, |p| f.installments_paid < p.months)
+            });
         let principal = match &product_opt {
             Some(p) => p.price.checked_sub(p.deposit).expect("overflow"),
             None => 0,

@@ -397,6 +397,16 @@ fn eligibility_reflects_savings_and_default() {
     assert_eq!(r.savings, 100_000_000);
     assert_eq!(r.max_principal, 400_000_000);
 
+    // A fully repaid financing no longer blocks eligibility — the borrower
+    // can start a new loan once the previous one is cleared.
+    contract.start_financing(&buyer, &X200);
+    for _ in 0..12 {
+        contract.pay_installment(&buyer, &X200);
+    }
+    let r: EligibilityResult = contract.check_eligibility(&buyer, &X200);
+    assert!(r.eligible);
+    assert!(!r.already_started);
+
     // After a default -> permanently rejected.
     contract.start_financing(&buyer, &X200);
     StellarAssetClient::new(&env, &usdc).mint(&contract.address, &200_000_000);
