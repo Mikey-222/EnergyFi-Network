@@ -46,16 +46,27 @@ and the underwriting economics in [`docs/UNDERWRITING.md`](docs/UNDERWRITING.md)
 └── docs/UNDERWRITING.md  # lending & underwriting design
 ```
 
-## Live on testnet (2026-08-07)
+## Live on testnet (2026-08-08)
 
 | Contract      | Version | Address                                                    |
 | ------------- | ------- | ---------------------------------------------------------- |
-| installments  | v7      | `CCVXQOOJCHVQVR7VQZJNN7QAZDJ6772GMFPI2XQI2LL7QEYQRURL44LM` |
+| installments  | v8      | `CBG4I4CCMKG5PANFYMPP4RYQLOIUQKH3MJBSAR5ZE4NK7TUL6YXR6ELN` |
 | project       | v2      | `CDIMAD6UA6MEF7NMBPSEELU5PNUFNSOL72YJXN2DUPMFRPBIDYBSNTAA` |
 | referral      | v2      | `CBURYW3CWH7L3R3RUADXCRNOQIOSKJEGDTBT5PPLS3ZMHKXCXDYFABAE` |
 | energy-credit | v1      | `CB56C2Z5LN5ACMY4T4GIVETTNJLNUMMSWSI4UEEZNP5KCBFOJ3PBM7YC` |
 
-## Verified contract call (2026-08-07)
+v8 of `installments` was redeployed on 2026-08-08 with one behavioural fix: a **fully
+repaid financing no longer blocks eligibility** — `check_eligibility` and
+`start_financing` now treat a cleared loan (12/12 paid) as finished, so a borrower who
+settled one loan can start another (previously the record existed forever and returned
+`already_started=true`). Verified live right after deploy: `check_eligibility(GAMFAIX,
+loan_50)` → `eligible=true, already_started=false`. The pool contract is untouched; the
+old v7 contract (`CCVXQOO…44LM`) was retired with an empty balance (0.00 USDC).
+
+## Verified contract call (2026-08-07, against the retired v7 contract)
+
+> These transactions ran against the **previous** installments deployment (`CCVXQOO…44LM`,
+> since replaced by v8) and remain verifiable on StellarExpert.
 
 A live `payoff_loan` call against the installments contract, verifiable on
 [StellarExpert](https://stellar.expert/explorer/testnet/tx/fdfbb3f10be2d0be740d5180144d20fdae7a29a0a8fe6360975564e10c944498):
@@ -183,5 +194,6 @@ landed on-chain.
 ## Status
 
 Live on Stellar testnet with soft-collateral underwriting and automatic saver-interest
-routing shipped (2026-08-06). Not audited; not mainnet — see the contracts README for
+routing shipped (2026-08-06); installments redeployed to v8 on 2026-08-08 (repaid
+borrowers are eligible again). Not audited; not mainnet — see the contracts README for
 known limitations and the roadmap.
