@@ -3,11 +3,12 @@
 Community energy finance on Stellar — savings, lending, and referral rewards built as a
 family of Soroban smart contracts, with a web frontend that talks to them directly on
 testnet.
+![banner](docs/screenshots/banner.png)
 
 ## What it does
 
 - **Savings pool** (`project`): a community lending pool with a fixed 1 USDC share price.
-  Savers invest, the pool's only income is *real* revenue — automatically routed saver
+  Savers invest, the pool's only income is _real_ revenue — automatically routed saver
   interest from loan repayments (plus optional manual top-ups) — and dividends are claimed
   pro-rata from what the pool actually holds. Shares are permanently locked (no
   withdrawals): that permanence is what makes the soft-collateral pledge work.
@@ -43,12 +44,12 @@ and the underwriting economics in [`docs/UNDERWRITING.md`](docs/UNDERWRITING.md)
 
 ## Live on testnet (2026-08-07)
 
-| Contract | Version | Address |
-|---|---|---|
-| installments | v7 | `CCVXQOOJCHVQVR7VQZJNN7QAZDJ6772GMFPI2XQI2LL7QEYQRURL44LM` |
-| project | v2 | `CDIMAD6UA6MEF7NMBPSEELU5PNUFNSOL72YJXN2DUPMFRPBIDYBSNTAA` |
-| referral | v2 | `CBURYW3CWH7L3R3RUADXCRNOQIOSKJEGDTBT5PPLS3ZMHKXCXDYFABAE` |
-| energy-credit | v1 | `CB56C2Z5LN5ACMY4T4GIVETTNJLNUMMSWSI4UEEZNP5KCBFOJ3PBM7YC` |
+| Contract      | Version | Address                                                    |
+| ------------- | ------- | ---------------------------------------------------------- |
+| installments  | v7      | `CCVXQOOJCHVQVR7VQZJNN7QAZDJ6772GMFPI2XQI2LL7QEYQRURL44LM` |
+| project       | v2      | `CDIMAD6UA6MEF7NMBPSEELU5PNUFNSOL72YJXN2DUPMFRPBIDYBSNTAA` |
+| referral      | v2      | `CBURYW3CWH7L3R3RUADXCRNOQIOSKJEGDTBT5PPLS3ZMHKXCXDYFABAE` |
+| energy-credit | v1      | `CB56C2Z5LN5ACMY4T4GIVETTNJLNUMMSWSI4UEEZNP5KCBFOJ3PBM7YC` |
 
 ## Verified contract call (2026-08-07)
 
@@ -59,7 +60,7 @@ A live `payoff_loan` call against the installments contract, verifiable on
 - **Contract:** `CCVXQOOJCHVQVR7VQZJNN7QAZDJ6772GMFPI2XQI2LL7QEYQRURL44LM` (installments v7)
 - **Function:** `payoff_loan(buyer, "loan_50")` — borrower `GAMFAIXVHC…C7VD` settled the
   remaining 11 installments of a 50 USDC loan (12/12 paid, 55.2 USDC total: 50 principal
-  + 5.2 interest auto-routed to the savings pool)
+  - 5.2 interest auto-routed to the savings pool)
 - **Ledger:** 4008384 · protocol 27 · successful
 
 Earlier in the same roundtrip: `start_financing`
@@ -102,7 +103,7 @@ balances **0.0000**, pool USDC **14.8357**.
 ```bash
 # contracts
 cd contracts
-cargo test --workspace            # 39/39 tests across the four contracts
+cargo test --workspace            # 44/44 tests across the four contracts
 
 # frontend
 cd dev-server
@@ -116,6 +117,24 @@ contracts' admin) and testnet USDC from the Circle faucet:
 ```bash
 DEPLOY_SECRET=$(stellar keys secret energyfi-deploy) node scripts/e2e-borrow-loop.mjs
 ```
+
+## Tests & CI
+
+**44/44 contract unit tests pass** (3 energy-credit · 20 installments · 8 project · 13
+referral) — see `contracts/README.md` §8 for the security-critical coverage list.
+
+| Check                  | How to run                                 | Count     |
+| ---------------------- | ------------------------------------------ | --------- |
+| Soroban contract tests | `cargo test --workspace` (in `contracts/`) | 44 passed |
+| Frontend typecheck     | `npx tsc --noEmit` (in `dev-server/`)      | 0 errors  |
+| Frontend build         | `npm run build` (in `dev-server/`)         | passes    |
+
+**CI/CD** runs every push to `main` and on pull requests via GitHub Actions
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): it installs Rust + the
+`@stellar/stellar-sdk`-based frontend, then runs the contract test suite, the frontend
+typecheck, and the production build. Status badge:
+
+[![CI](https://github.com/Mikey-222/EnergyFi-Network/actions/workflows/ci.yml/badge.svg)](https://github.com/Mikey-222/EnergyFi-Network/actions/workflows/ci.yml)
 
 ## Screenshots
 
@@ -148,6 +167,10 @@ describing what failed, so the user always knows whether their transaction
 landed on-chain.
 
 ![Transaction result](docs/screenshots/tx-result.png)
+
+### Mobile responsive UI
+
+![Mobile UI](docs/screenshots/responsive-ui.png)
 
 ## Status
 
