@@ -87,7 +87,7 @@ function Repay() {
               Loans you start appear here with a monthly schedule and a pay‑off in full option.
             </div>
             <div className="mt-4">
-              <Button as={Link} to="/app/market/financing/plan">
+              <Button as={Link} to="/app/market/financing/plan" search={{ product: "loan_100" }}>
                 Take a loan
               </Button>
             </div>
@@ -217,7 +217,7 @@ function Repay() {
             <p className="text-[11px] text-muted-foreground text-center">
               Need help deciding? Open{" "}
               <span className="text-primary">
-                <Link to="/app/market/financing/plan">financing</Link>
+                <Link to="/app/market/financing/plan" search={{ product: "loan_100" }}>financing</Link>
               </span>{" "}
               or contact support from the profile.
             </p>

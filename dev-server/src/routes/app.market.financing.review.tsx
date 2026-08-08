@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ScreenHeader, ScreenBody, Card, Button } from "@/components/energyfi/ui";
-import { PenLine, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { PenLine, Loader2, PiggyBank, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useWallet } from "@/components/energyfi/wallet-provider";
 import { useProduct, confirmReferralUsageIfPending } from "@/lib/energyfi/hooks";
-import { getInstallmentsClient } from "@/lib/energyfi/contracts";
+import { getInstallmentsClient, fromStroops } from "@/lib/energyfi/contracts";
+import type { EligibilityResult } from "@/contracts/installments";
 
 export const Route = createFileRoute("/app/market/financing/review")({
   component: Review,
@@ -20,9 +21,48 @@ function Review() {
   const { product, loading } = useProduct(address, productId);
   const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [eligibility, setEligibility] = useState<EligibilityResult | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    setChecking(true);
+    getInstallmentsClient(address)
+      .check_eligibility({ borrower: address, product_id: productId })
+      .then((res) => {
+        if (!cancelled) setEligibility(res.result as unknown as EligibilityResult);
+      })
+      .catch(() => {
+        if (!cancelled) setEligibility(null);
+      })
+      .finally(() => {
+        if (!cancelled) setChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [address, productId]);
+
+  const pledgeMet =
+    eligibility != null &&
+    eligibility.eligible &&
+    !eligibility.defaulted &&
+    !eligibility.already_started;
+  const shortfallUsd =
+    eligibility && eligibility.savings < eligibility.required_pledge
+      ? fromStroops(eligibility.required_pledge - eligibility.savings)
+      : null;
+  const topUpUsd =
+    shortfallUsd != null ? +Math.ceil(Number(shortfallUsd)).toFixed(2) : null;
 
   const sign = async () => {
     if (!address || !product) return;
+    if (!pledgeMet) {
+      setError("This loan needs a 25% pool-savings pledge. Save first, then come back.");
+      setStatus("error");
+      return;
+    }
     setStatus("sending");
     setError(null);
     try {
@@ -74,6 +114,82 @@ function Review() {
                 </div>
               ))}
             </Card>
+            {checking ? (
+              <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking your pledge…
+              </div>
+            ) : eligibility && !pledgeMet ? (
+              <Card className="border-warning/25">
+                <div className="flex items-start gap-2.5">
+                  <ShieldAlert className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <div className="font-semibold text-warning">Pledge not met</div>
+                    <p className="mt-1 text-muted-foreground">
+                      This loan needs{" "}
+                      <span className="font-semibold text-foreground">
+                        {fromStroops(eligibility.required_pledge)} USDC
+                      </span>{" "}
+                      in pool savings (a 25% pledge). You currently have{" "}
+                      <span className="font-semibold text-foreground">
+                        {fromStroops(eligibility.savings)} USDC
+                      </span>
+                      {shortfallUsd ? (
+                        <>
+                          {" "}
+                          — save{" "}
+                          <span className="font-semibold text-warning">
+                            {topUpUsd} USDC
+                          </span>{" "}
+                          more (whole shares only).
+                        </>
+                      ) : (
+                        "."
+                      )}
+                    </p>
+                    <Button
+                      as={Link}
+                      to="/app/market/invest/$id"
+                      params={{ id: "neighbourhood-pool" }}
+                      className="!h-9 mt-2 w-full !text-xs"
+                    >
+                      <PiggyBank className="h-3.5 w-3.5" /> Save in the pool
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ) : eligibility?.defaulted ? (
+              <Card className="border-destructive/25">
+                <div className="flex items-start gap-2.5">
+                  <ShieldAlert className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <div className="font-semibold text-destructive">Account defaulted</div>
+                    <p className="mt-1 text-muted-foreground">
+                      This wallet was settled as defaulted on a previous loan. New financings are
+                      blocked until the platform admin clears the flag.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ) : eligibility?.already_started ? (
+              <Card className="border-destructive/25">
+                <div className="flex items-start gap-2.5">
+                  <ShieldAlert className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <div className="font-semibold text-destructive">Loan already started</div>
+                    <p className="mt-1 text-muted-foreground">
+                      You already have a financing for this product. Track and repay it from the
+                      repay screen.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ) : eligibility ? (
+              <Card className="border-success/25">
+                <p className="text-xs text-success">
+                  Your pool savings cover the 25% pledge — you're eligible to sign.
+                </p>
+              </Card>
+            ) : null}
             <Card className="text-center">
               <PenLine className="h-6 w-6 text-primary mx-auto" />
               <div className="mt-2 text-sm font-medium">Tap to sign</div>
@@ -93,7 +209,7 @@ function Review() {
             <Button as={Link} to="/app/market/financing/eligibility">
               Eligibility check
             </Button>
-            <Button onClick={sign} disabled={status === "sending"}>
+            <Button onClick={sign} disabled={status === "sending" || (checking && !eligibility)}>
               {status === "sending" ? "Signing…" : "Sign & start your loan"}
             </Button>
           </>

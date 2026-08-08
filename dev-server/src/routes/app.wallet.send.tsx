@@ -3,13 +3,18 @@ import { useState } from "react";
 import { ScreenHeader, ScreenBody, Field, Input, Button } from "@/components/energyfi/ui";
 import { QrCode, Loader2, CheckCircle2, AlertCircle, Wallet as WalletIcon } from "lucide-react";
 import { useWallet } from "@/components/energyfi/wallet-provider";
-import { stellar } from "@/lib/stellar";
+import { sendUsdc, sendEurc } from "@/lib/energyfi/tokens";
+import { useProfile } from "@/lib/energyfi/profile";
 
 export const Route = createFileRoute("/app/wallet/send")({ component: Send });
 
 function Send() {
   const nav = useNavigate();
   const { address, isConnecting, connect, formatAddress } = useWallet();
+  const profile = useProfile(address);
+  const [currency, setCurrency] = useState<"USDC" | "EURC">(
+    profile.currency === "EURC" ? "EURC" : "USDC",
+  );
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
   const [memo, setMemo] = useState("");
@@ -26,7 +31,8 @@ function Send() {
     setSending(true);
     setError(null);
     try {
-      const result = await stellar.sendPayment({
+      const send = currency === "EURC" ? sendEurc : sendUsdc;
+      const result = await send({
         from: address,
         to: to.trim(),
         amount: amount.trim(),
@@ -51,7 +57,7 @@ function Send() {
   if (!address) {
     return (
       <>
-        <ScreenHeader back="/app/wallet" title="Send USDC" bell={false} />
+        <ScreenHeader back="/app/wallet" title={`Send ${currency}`} bell={false} />
         <ScreenBody>
           <div className="rounded-2xl bg-surface hairline p-5 flex flex-col items-center text-center gap-3">
             <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-primary">
@@ -78,8 +84,21 @@ function Send() {
 
   return (
     <>
-      <ScreenHeader back="/app/wallet" title="Send USDC" bell={false} />
+      <ScreenHeader back="/app/wallet" title={`Send ${currency}`} bell={false} />
       <ScreenBody>
+        <div className="flex gap-1.5 rounded-full bg-surface hairline p-1 mb-4">
+          {(["USDC", "EURC"] as const).map((c) => (
+            <button
+              key={c}
+              onClick={() => setCurrency(c)}
+              className={`flex-1 h-9 rounded-full text-xs font-semibold transition-colors ${
+                currency === c ? "bg-primary text-background" : "text-muted-foreground"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
         <div className="rounded-xl bg-surface hairline p-3.5 flex items-center gap-3">
           <div className="grid h-9 w-9 place-items-center rounded-full energy-gradient text-background text-xs font-semibold">
             {formatAddress(address).slice(0, 2).toUpperCase()}
@@ -103,7 +122,7 @@ function Send() {
             </button>
           </div>
         </Field>
-        <Field label="Amount (USDC)">
+        <Field label={`Amount (${currency})`}>
           <Input
             placeholder="0.00"
             inputMode="decimal"
@@ -139,7 +158,7 @@ function Send() {
         {success ? (
           <div className="flex items-center gap-2 rounded-xl bg-success/10 border border-success/30 p-3">
             <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-            <p className="text-xs">Payment sent successfully!</p>
+            <p className="text-xs">{currency} sent successfully!</p>
           </div>
         ) : null}
 

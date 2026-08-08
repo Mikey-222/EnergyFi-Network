@@ -27,7 +27,7 @@ import {
 } from "@/lib/energyfi/contracts";
 import { getPaymentHistory, type PaymentRecord } from "@/lib/energyfi/tokens";
 import { cleanPayments, dayLabel, hiddenInvokeCount, fmtAmount } from "@/lib/energyfi/activity";
-import { getInstallmentsActivity } from "@/lib/energyfi/pool-events";
+import { getInstallmentsActivity, type PoolActivityRecord } from "@/lib/energyfi/pool-events";
 import {
   CONTRACTS,
   ADMIN_ADDRESS,
@@ -107,6 +107,10 @@ function Admin() {
       return;
     }
     setLoading(true);
+    const ic = getInstallmentsClient(address);
+
+    // Pools — SAC balance reads (RPC). Isolated: a failure here must not
+    // blank the loan/product sections below.
     try {
       const poolDefs: { label: string; code: "USDC" | "EURC"; id: string; hint: string }[] = [
         {
@@ -135,18 +139,30 @@ function Admin() {
         },
       ];
       const settled = await Promise.all(
-        poolDefs.map(async (p) => ({
-          label: p.label,
-          hint: p.hint,
-          usdc: p.code === "USDC" ? fromStroops(await getSacBalance(address, "USDC", p.id)) : null,
-          eurc: p.code === "EURC" ? fromStroops(await getSacBalance(address, "EURC", p.id)) : null,
-        })),
+        poolDefs.map(async (p) => {
+          try {
+            return {
+              label: p.label,
+              hint: p.hint,
+              usdc:
+                p.code === "USDC" ? fromStroops(await getSacBalance(address, "USDC", p.id)) : null,
+              eurc:
+                p.code === "EURC" ? fromStroops(await getSacBalance(address, "EURC", p.id)) : null,
+            };
+          } catch {
+            return { label: p.label, hint: p.hint, usdc: null, eurc: null };
+          }
+        }),
       );
       setPools(settled);
+    } catch {
+      // pools unavailable — keep whatever we had
+    }
 
+    // Stats — project/referral/installments views (RPC). Isolated.
+    try {
       const pc = getProjectClient(address);
       const rc = getReferralClient(address);
-      const ic = getInstallmentsClient(address);
       const [sp, sold, count, fees] = await Promise.all([
         pc.share_price(),
         pc.total_sold(),
@@ -159,62 +175,67 @@ function Admin() {
         referrals: String(count.result),
         fees: fromStroops(fees.result as bigint),
       });
+    } catch {
+      // stats unavailable
+    }
 
+    // Recent transfers — Horizon-based. Isolated: the WI-FI uplink is known
+    // to drop Horizon TLS; that must not blank the loans section.
+    try {
       const history = await getPaymentHistory(address, 20);
       setActivity(history);
       setInstActivity(await getInstallmentsActivity(address));
+    } catch {
+      // activity unavailable
+    }
 
-      const rows: LoanRow[] = [];
-      try {
-        const countRes = await ic.borrower_count();
-        const count = Number(countRes.result);
-        const buyers = new Map<string, boolean>();
-        for (let i = 0; i < Math.min(count, 20); i++) {
-          const b = await ic.borrower_at({ index: i });
-          const buyer = b.result as string;
-          const d = await ic.is_defaulted({ buyer });
-          buyers.set(buyer, d.result as boolean);
-        }
-        for (const [buyer, defaulted] of buyers) {
-          for (const id of PRODUCT_IDS) {
-            try {
-              const f = await ic.get_financing({ buyer, product_id: id });
-              rows.push({
-                buyer,
-                productId: id,
-                financing: f.result as unknown as Financing,
-                defaulted,
-              });
-            } catch {
-              // no financing for this product
-            }
+    const rows: LoanRow[] = [];
+    try {
+      const countRes = await ic.borrower_count();
+      const count = Number(countRes.result);
+      const buyers = new Map<string, boolean>();
+      for (let i = 0; i < Math.min(count, 20); i++) {
+        const b = await ic.borrower_at({ index: i });
+        const buyer = b.result as string;
+        const d = await ic.is_defaulted({ buyer });
+        buyers.set(buyer, d.result as boolean);
+      }
+      for (const [buyer, defaulted] of buyers) {
+        for (const id of PRODUCT_IDS) {
+          try {
+            const f = await ic.get_financing({ buyer, product_id: id });
+            rows.push({
+              buyer,
+              productId: id,
+              financing: f.result as unknown as Financing,
+              defaulted,
+            });
+          } catch {
+            // no financing for this product
           }
         }
-      } catch (err) {
-        console.error("failed to load loan rows:", err);
       }
-      setLoans(rows);
-
-      const corpusRows: ProductCorpus[] = [];
-      for (const id of PRODUCT_IDS) {
-        try {
-          const p = (await ic.get_product({ product_id: id })).result as unknown as import("@/contracts/installments").Product;
-          corpusRows.push({
-            productId: id,
-            name: PRODUCT_CATALOG[id]?.name ?? id,
-            totalPaid: p.total_paid,
-            withdrawn: p.withdrawn,
-          });
-        } catch {
-          // product not registered
-        }
-      }
-      setCorpora(corpusRows);
     } catch (err) {
-      console.error("admin refresh failed:", err);
-    } finally {
-      setLoading(false);
+      console.error("failed to load loan rows:", err);
     }
+    setLoans(rows);
+
+    const corpusRows: ProductCorpus[] = [];
+    for (const id of PRODUCT_IDS) {
+      try {
+        const p = (await ic.get_product({ product_id: id })).result as unknown as import("@/contracts/installments").Product;
+        corpusRows.push({
+          productId: id,
+          name: PRODUCT_CATALOG[id]?.name ?? id,
+          totalPaid: p.total_paid,
+          withdrawn: p.withdrawn,
+        });
+      } catch {
+        // product not registered
+      }
+    }
+    setCorpora(corpusRows);
+    setLoading(false);
   }, [address, isAdmin]);
 
   useEffect(() => {
@@ -255,14 +276,24 @@ function Admin() {
     }
   };
 
-  const runLoanAction = async (key: string, kind: "late" | "settle" | "clear", row: LoanRow) => {
+  const runLoanAction = async (
+    key: string,
+    kind: "disburse" | "late" | "settle" | "clear",
+    row: LoanRow,
+  ) => {
     if (!address) return;
     const admin = address;
     setBusy(key);
     setResults((r) => ({ ...r, [key]: "" }));
     try {
       const ic = getInstallmentsClient(admin);
-      if (kind === "late") {
+      if (kind === "disburse") {
+        const tx = await ic.disburse_loan({
+          buyer: row.buyer,
+          product_id: row.productId,
+        });
+        await tx.signAndSend();
+      } else if (kind === "late") {
         const tx = await ic.mark_late({
           admin,
           buyer: row.buyer,
@@ -602,6 +633,16 @@ function Admin() {
                                 );
                               })()}
                             <div className="flex items-center gap-1.5 shrink-0">
+                              {!row.defaulted && !row.financing.disbursed && (
+                                <button
+                                  disabled={busy !== null}
+                                  onClick={() => runLoanAction(key, "disburse", row)}
+                                  className={`${smallBtn} bg-success/15 text-success`}
+                                  title="Pays the principal from the loan escrow to the borrower's wallet"
+                                >
+                                  {busy === key ? "…" : "Disburse"}
+                                </button>
+                              )}
                               {!row.defaulted && row.financing.disbursed && (
                                 <>
                                   <button

@@ -6,6 +6,10 @@ import {
   allowAllModules,
   FREIGHTER_ID,
 } from "@creit.tech/stellar-wallets-kit";
+// Side-effect import: registers the <stellar-wallets-modal> Lit web component
+// so openModal() can render the wallet picker. Without it Vite tree-shakes
+// the module and the modal silently renders nothing.
+import "@creit.tech/stellar-wallets-kit/components/modal/stellar-wallets-modal.js";
 import { NETWORK } from "./config";
 
 let kit: StellarWalletsKit | null = null;

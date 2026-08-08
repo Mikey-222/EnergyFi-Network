@@ -55,6 +55,7 @@ function Eli() {
     result && result.savings < result.required_pledge
       ? fromStroops(result.required_pledge - result.savings)
       : null;
+  const topUpUsd = shortfallUsd != null ? +Math.ceil(Number(shortfallUsd)).toFixed(2) : null;
 
   return (
     <>
@@ -141,8 +142,10 @@ function Eli() {
               {shortfallUsd && (
                 <p className="mt-3 text-xs text-muted-foreground text-left">
                   Loans are capped at 4x your savings in the neighbourhood pool — a 25% pledge. Save{" "}
-                  <span className="text-warning font-semibold">{shortfallUsd} USDC</span> more to
-                  qualify for this loan.
+                  <span className="text-warning font-semibold">
+                    {topUpUsd != null ? `${topUpUsd} USDC` : `${shortfallUsd} USDC`}
+                  </span>{" "}
+                  more to qualify for this loan (pool savings are held in whole shares).
                 </p>
               )}
             </Card>

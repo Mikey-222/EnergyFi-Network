@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { ScreenHeader, ScreenBody, Card, Button } from "@/components/energyfi/ui";
-import { Loader2 } from "lucide-react";
+import { Loader2, PiggyBank } from "lucide-react";
 import { useWallet } from "@/components/energyfi/wallet-provider";
-import { useProduct, useActiveLoans } from "@/lib/energyfi/hooks";
+import { useProduct, useActiveLoans, useInvestorState } from "@/lib/energyfi/hooks";
 
 export const Route = createFileRoute("/app/market/financing/plan")({
   component: Plan,
@@ -16,6 +16,20 @@ function Plan() {
   const { product: productId } = useSearch({ from: "/app/market/financing/plan" });
   const { product, loading, error } = useProduct(address, productId);
   const { loans } = useActiveLoans(address);
+  const { investor, projectStats } = useInvestorState(address);
+
+  const requiredPledgeUsd = product ? +(+product.priceUsd * 0.25).toFixed(2) : null;
+  const savingsUsd =
+    investor && projectStats ? +(Number(investor.shares) * Number(projectStats.sharePriceUsd)).toFixed(2) : null;
+  const shortfallUsd =
+    savingsUsd != null && requiredPledgeUsd != null && savingsUsd < requiredPledgeUsd
+      ? +(requiredPledgeUsd - savingsUsd).toFixed(2)
+      : null;
+  const topUpUsd =
+    savingsUsd != null && shortfallUsd != null
+      ? +Math.ceil(shortfallUsd).toFixed(2) // pool invests whole shares only (min 1 USDC)
+      : null;
+  const pledgeMet = savingsUsd != null && requiredPledgeUsd != null && savingsUsd >= requiredPledgeUsd;
 
   return (
     <>
@@ -62,6 +76,52 @@ function Plan() {
                 for {product.months} months · {product.name}
               </div>
             </Card>
+            {requiredPledgeUsd != null && (
+              <Card
+                className={pledgeMet ? "border-success/25" : "border-warning/25"}
+              >
+                <div className="text-xs font-semibold text-muted-foreground mb-2">
+                  Savings pledge required
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Pledge needed (25%)</span>
+                  <span className="tabular font-medium">{requiredPledgeUsd} USDC</span>
+                </div>
+                <div className="flex justify-between text-xs mt-2">
+                  <span className="text-muted-foreground">Your pool savings</span>
+                  <span className="tabular font-medium">
+                    {savingsUsd != null ? `${savingsUsd} USDC` : "—"}
+                  </span>
+                </div>
+                {!address ? (
+                  <p className="mt-3 text-[11px] text-muted-foreground">
+                    Connect your wallet to check how much you already have saved.
+                  </p>
+                ) : pledgeMet ? (
+                  <p className="mt-3 text-[11px] text-success">
+                    Your savings cover the pledge — you're eligible for this loan.
+                  </p>
+                ) : shortfallUsd != null && shortfallUsd > 0 ? (
+                  <div className="mt-3 rounded-xl bg-warning/10 border border-warning/25 p-2.5">
+                    <p className="text-[11px] text-muted-foreground">
+                      Loans are capped at 4x your savings in the pool — a 25% pledge. Save{" "}
+                      <span className="text-warning font-semibold">
+                        {topUpUsd != null ? `${topUpUsd} USDC` : `${shortfallUsd} USDC`}
+                      </span>{" "}
+                      more to qualify (pool savings are held in whole shares).
+                    </p>
+                    <Button
+                      as={Link}
+                      to="/app/market/invest/$id"
+                      params={{ id: "neighbourhood-pool" }}
+                      className="!h-9 mt-2 w-full !text-xs"
+                    >
+                      <PiggyBank className="h-3.5 w-3.5" /> Save in the pool
+                    </Button>
+                  </div>
+                ) : null}
+              </Card>
+            )}
             <Card>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Principal to your wallet</span>

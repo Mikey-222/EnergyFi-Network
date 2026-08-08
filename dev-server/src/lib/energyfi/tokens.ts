@@ -1,5 +1,5 @@
 // Horizon-based helpers: balances, trustlines, and payment history.
-import { Horizon, Asset, Transaction, TransactionBuilder, Operation } from "@stellar/stellar-sdk";
+import { Horizon, Asset, Memo, Transaction, TransactionBuilder, Operation } from "@stellar/stellar-sdk";
 import { NETWORK, USDC, EURC } from "./config";
 import { signTransactionXdr } from "./signer";
 import { cachedRead } from "./cache";
@@ -93,6 +93,53 @@ export async function addTrustline(publicKey: string, code: string): Promise<str
   const txToSubmit = TransactionBuilder.fromXDR(signed.signedTxXdr, NETWORK.networkPassphrase);
   const res = await horizon.submitTransaction(txToSubmit as Transaction);
   return res.hash;
+}
+
+export async function sendUsdc(params: {
+  from: string;
+  to: string;
+  amount: string;
+  memo?: string;
+}): Promise<{ hash: string; success: boolean }> {
+  return sendAssetPayment({ asset: new Asset(USDC.code, USDC.issuer), ...params });
+}
+
+export async function sendEurc(params: {
+  from: string;
+  to: string;
+  amount: string;
+  memo?: string;
+}): Promise<{ hash: string; success: boolean }> {
+  return sendAssetPayment({ asset: new Asset(EURC.code, EURC.issuer), ...params });
+}
+
+async function sendAssetPayment(params: {
+  from: string;
+  to: string;
+  amount: string;
+  memo?: string;
+  asset: Asset;
+}): Promise<{ hash: string; success: boolean }> {
+  const account = await horizon.loadAccount(params.from);
+  const builder = new TransactionBuilder(account, {
+    fee: "100",
+    networkPassphrase: NETWORK.networkPassphrase,
+  }).addOperation(
+    Operation.payment({
+      destination: params.to,
+      asset: params.asset,
+      amount: params.amount,
+    }),
+  );
+  if (params.memo) {
+    builder.addMemo(Memo.text(params.memo));
+  }
+  const tx = builder.setTimeout(180).build();
+
+  const signed = await signTransactionXdr(tx.toXDR());
+  const txToSubmit = TransactionBuilder.fromXDR(signed.signedTxXdr, NETWORK.networkPassphrase);
+  const res = await horizon.submitTransaction(txToSubmit as Transaction);
+  return { hash: res.hash, success: res.successful };
 }
 
 export type PaymentRecord = {

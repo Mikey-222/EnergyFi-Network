@@ -215,6 +215,7 @@ function parseInstallmentsEvent(
     defaulted: "defaulted",
     default_cleared: "default_cleared",
   };
+  if (t1 === null) return null;
   const kind = kinds[t1];
   return kind ? { kind, address, amount } : null;
 }
