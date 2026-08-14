@@ -191,6 +191,26 @@ landed on-chain.
 
 ![Mobile UI](docs/screenshots/responsive-ui.png)
 
+## User feedback & next improvements
+
+We collect structured feedback from testnet users through our [Google Form](https://forms.gle/hUHBcXunGYpFvjJo9) — it captures the user's wallet address, email, name, product rating, and open feedback so every submission is traceable to a real on-chain user. All responses are exported and maintained as an Excel sheet for analysis and record-keeping:
+
+- **Form:** https://forms.gle/hUHBcXunGYpFvjJo9
+- **Responses (Excel):** `docs/feedback/energyfi-feedback.xlsx`
+- **Feedback summary:** `docs/feedback/SUMMARY.md`
+
+### How feedback drives the roadmap
+
+Each item below was selected from the feedback collected so far, with the commit that implements it linked for traceability:
+
+| Feedback theme | Planned change | Commit |
+| -------------- | -------------- | ------ |
+| [Theme — e.g. "confusing default flow"] | [Change — e.g. "guided first-time onboarding tour"] | [`<hash>`](https://github.com/Mikey-222/EnergyFi-Network/commit/<hash>) |
+| [Theme] | [Change] | [`<hash>`](https://github.com/Mikey-222/EnergyFi-Network/commit/<hash>) |
+| [Theme] | [Change] | [`<hash>`](https://github.com/Mikey-222/EnergyFi-Network/commit/<hash>) |
+
+> Placeholder rows: replace each `[Theme]` / `[Change]` with the actual feedback theme and the implementing commit hash once shipped. See [`docs/ROADMAP.md`](docs/ROADMAP.md) L5 for the full iteration backlog.
+
 ## Status
 
 Live on Stellar testnet with soft-collateral underwriting and automatic saver-interest
