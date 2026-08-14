@@ -191,6 +191,11 @@ landed on-chain.
 
 ![Mobile UI](docs/screenshots/responsive-ui.png)
 
+## Pitch deck & demo
+
+- **Pitch deck:** https://gamma.app/docs/EnergyFi-Network-qby6v0bj7i0a57f
+- **Demo video (full walkthrough):** https://youtu.be/vA_G6xIg7J8
+
 ## User feedback & next improvements
 
 We collect structured feedback from testnet users through our [Google Form](https://forms.gle/hUHBcXunGYpFvjJo9) — it captures the user's wallet address, email, name, product rating, and open feedback so every submission is traceable to a real on-chain user. All responses are exported and maintained as an Excel sheet for analysis and record-keeping:
