@@ -259,7 +259,7 @@ landed on-chain.
 We collect structured feedback from testnet users through our [Google Form](https://forms.gle/hUHBcXunGYpFvjJo9) — it captures the user's wallet address, email, name, product rating, and open feedback so every submission is traceable to a real on-chain user. All responses are exported and maintained as an Excel sheet for analysis and record-keeping:
 
 - **Form:** https://forms.gle/hUHBcXunGYpFvjJo9
-- **Responses (Excel):** `docs/feedback/energyfi-feedback.xlsx`
+- **Responses (Excel):** [Google Sheets export](https://docs.google.com/spreadsheets/d/18lQFrB-6HqctlMi40gxN6DEdT5uofPYv9L8mZXu6ArM/edit?usp=sharing) (also archived as `docs/feedback/energyfi-feedback.xlsx`)
 - **Feedback summary:** `docs/feedback/SUMMARY.md`
 
 ### How feedback drives the roadmap
