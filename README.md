@@ -198,7 +198,7 @@ landed on-chain.
 
 ## Testnet users (verifiable on Stellar Expert)
 
-34 testnet wallets onboarded through the app, all verifiable on
+50 testnet wallets onboarded through the app, all verifiable on
 [Stellar Expert (testnet)](https://stellar.expert/explorer/testnet):
 
 | # | Address |
